@@ -20,7 +20,7 @@ from flask_migrate import Migrate
 #
 # import models from models.py
 # 
-from models import db, Venue, Artist
+from models import db, Venue, Artist, Show
 
 app = Flask(__name__)
 moment = Moment(app)
