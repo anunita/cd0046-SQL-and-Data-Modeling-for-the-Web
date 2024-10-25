@@ -17,16 +17,16 @@ from flask_migrate import Migrate
 # App Config.
 #----------------------------------------------------------------------------#
 
+#
+# import models from models.py
+# 
+from models import db, Venue, Artist
+
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
-db = SQLAlchemy(app)
+db.init_app(app)
 migrate = Migrate(app, db)
-
-#
-# import models from model.py
-# 
-from models import * 
 
 #----------------------------------------------------------------------------#
 # Filters.

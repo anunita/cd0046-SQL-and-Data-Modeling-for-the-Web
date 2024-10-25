@@ -1,4 +1,7 @@
-from app import db
+from flask_sqlalchemy import SQLAlchemy
+
+# TODO: connect to a local postgresql database
+db = SQLAlchemy()
 
 # Creating this file to keep all models of the tables
 
