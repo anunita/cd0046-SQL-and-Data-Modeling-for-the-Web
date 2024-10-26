@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
 import json
 import dateutil.parser
 import babel
@@ -12,7 +11,8 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-from flask_migrate import Migrate
+import os
+#from flask_migrate import Migrate
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -26,7 +26,10 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db.init_app(app)
-migrate = Migrate(app, db)
+#migrate = Migrate(app, db)
+
+with app.app_context():
+  db.create_all()
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -58,7 +61,8 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
+ '''  
+ data=[{
     "city": "San Francisco",
     "state": "CA",
     "venues": [{
@@ -77,9 +81,34 @@ def venues():
       "id": 2,
       "name": "The Dueling Pianos Bar",
       "num_upcoming_shows": 0,
+      }]
     }]
-  }]
-  return render_template('pages/venues.html', areas=data);
+ '''
+ data = []
+ # combining the cities and state to fetch all the venues under it
+ citysta = Venue.query.distinct(Venue.city, Venue.state).all()
+ current_time = datetime.now().strftime('%Y-%m-%d %H:%S:%M')
+
+ for a in citysta:
+#listing the venues based on city and state for each iteration of citysta 
+   venlist = Venue.query.filter_by(state=a.state).filter_by(city=a.city).all()
+   ven_list = []
+   for b in venlist:
+     upcom_shows= len(db.session.query(Show).filter(Show.venue_id==b.id).filter(Show.start_time>datetime.now()).all())
+     ven_list.append({
+       "id": b.id,
+       "name": b.name,
+       "num_upcoming_shows": upcom_shows
+     })
+# preparing the data list
+    
+   data.append({
+      "city": a.city,
+      "state": a.state,
+      "venues": ven_list
+    })
+ return render_template('pages/venues.html', areas=data);
+
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -481,12 +510,13 @@ if not app.debug:
 #----------------------------------------------------------------------------#
 
 # Default port:
+'''
 if __name__ == '__main__':
     app.run()
+'''
 
 # Or specify port manually:
-'''
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port)
-'''
