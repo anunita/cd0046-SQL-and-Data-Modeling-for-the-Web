@@ -30,9 +30,6 @@ app.config.from_object('config')
 db.init_app(app)
 migrate = Migrate(app, db)
 
-#with app.app_context():
-#  db.create_all()
-
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -66,24 +63,24 @@ def venues():
 
  data = []
  # combining the cities and state to fetch all the venues under it
- citysta = Venue.query.distinct(Venue.city, Venue.state).all()
+ citystate = Venue.query.distinct(Venue.city, Venue.state).all()
 
- for a in citysta:
-#listing the venues based on city and state for each iteration of citysta 
-   venlist = Venue.query.filter_by(state=a.state).filter_by(city=a.city).all()
+ for citysta in citystate:
+#listing the venues based on city and state for each iteration of citystate 
+   venlist = Venue.query.filter_by(state=citysta.state).filter_by(city=citysta.city).all()
    ven_list = []
-   for b in venlist:
-     upcom_shows= len(db.session.query(Show).filter(Show.venue_id==b.id).filter(Show.start_time>datetime.now()).all())
+   for ven in venlist:
+     upcom_shows= len(db.session.query(Show).filter(Show.venue_id==ven.id).filter(Show.start_time>datetime.now()).all())
      ven_list.append({
-       "id": b.id,
-       "name": b.name,
+       "id": ven.id,
+       "name": ven.name,
        "num_upcoming_shows": upcom_shows
      })
 # preparing the data list
     
    data.append({
-      "city": a.city,
-      "state": a.state,
+      "city": citysta.city,
+      "state": citysta.state,
       "venues": ven_list
     })
  return render_template('pages/venues.html', areas=data);
@@ -190,7 +187,7 @@ def create_venue_submission():
   try:
       max_id = db.session.query(func.max(Venue.id)).scalar()
       add_venue = Venue()
-      add_venue = max_id + 1,
+      add_venue.id = max_id + 1,
       add_venue.name = request.form.get('name'),
       add_venue.city = request.form.get('city'),
       add_venue.state = request.form.get('state'),
@@ -199,7 +196,7 @@ def create_venue_submission():
       add_venue.genres = ', '.join(request.form.getlist('genres'))
       add_venue.image_link = request.form.get('image_link'),
       add_venue.facebook_link = request.form.get('facebook_link'),
-      add_venue.website = request.form.get('website'),
+      add_venue.website = request.form.get('website_link'),
       seek_talent = request.form.get('seeking_talent')
       if seek_talent == 'y':
         add_venue.seeking_talent = True
@@ -381,7 +378,7 @@ def edit_artist_submission(artist_id):
     data.genres = ', '.join(request.form.getlist('genres'))
     data.image_link = request.form.get('image_link'),
     data.facebook_link = request.form.get('facebook_link'),
-    data.website = request.form.get('website'),
+    data.website = request.form.get('website_link'),
     seek_venue = request.form.get('seeking_venue')
     if seek_venue == 'y':
       data.seeking_venue = True
@@ -442,7 +439,7 @@ def edit_venue_submission(venue_id):
     data.genres = ', '.join(request.form.getlist('genres'))
     data.image_link = request.form.get('image_link'),
     data.facebook_link = request.form.get('facebook_link'),
-    data.website = request.form.get('website'),
+    data.website = request.form.get('website_link'),
     seek_talent = request.form.get('seeking_talent')
     if seek_talent == 'y':
       data.seeking_talent = True
@@ -499,7 +496,7 @@ def create_artist_submission():
       add_artist.genres = ', '.join(request.form.getlist('genres'))
       add_artist.image_link = request.form.get('image_link'),
       add_artist.facebook_link = request.form.get('facebook_link'),
-      add_artist.website = request.form.get('website'),
+      add_artist.website = request.form.get('website_link'),
       seek_venue = request.form.get('seeking_venue')
       if seek_venue == 'y':
         add_artist.seeking_venue = True
