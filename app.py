@@ -7,6 +7,7 @@ import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
@@ -187,7 +188,9 @@ def create_venue_submission():
   error = False
   
   try:
+      max_id = db.session.query(func.max(Venue.id)).scalar()
       add_venue = Venue()
+      add_venue = max_id + 1,
       add_venue.name = request.form.get('name'),
       add_venue.city = request.form.get('city'),
       add_venue.state = request.form.get('state'),
@@ -486,7 +489,9 @@ def create_artist_submission():
   error = False
   
   try:
+      max_id = db.session.query(func.max(Artist.id)).scalar()
       add_artist = Artist()
+      add_artist.id = max_id + 1,
       add_artist.name = request.form.get('name'),
       add_artist.city = request.form.get('city'),
       add_artist.state = request.form.get('state'),
@@ -559,7 +564,9 @@ def create_show_submission():
   error = False
   
   try:
+      max_id = db.session.query(func.max(Show.id)).scalar()
       add_show = Show()
+      add_show.id = max_id + 1
       add_show.venue_id = request.form.get('venue_id')
       add_show.artist_id = request.form.get('artist_id')
       add_show.start_time = request.form.get('start_time')
