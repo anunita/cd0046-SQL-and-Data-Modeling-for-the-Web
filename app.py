@@ -14,7 +14,7 @@ from flask_wtf import Form
 from forms import *
 import os
 import sys
-#from flask_migrate import Migrate
+from flask_migrate import Migrate
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -28,10 +28,10 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db.init_app(app)
-#migrate = Migrate(app, db)
+migrate = Migrate(app, db)
 
-with app.app_context():
-  db.create_all()
+#with app.app_context():
+#  db.create_all()
 
 #----------------------------------------------------------------------------#
 # Filters.
