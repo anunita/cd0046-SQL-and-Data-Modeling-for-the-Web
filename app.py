@@ -62,11 +62,9 @@ def venues():
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
 
  data = []
- # combining the cities and state to fetch all the venues under it
  citystate = Venue.query.distinct(Venue.city, Venue.state).all()
 
  for citysta in citystate:
-#listing the venues based on city and state for each iteration of citystate 
    venlist = Venue.query.filter_by(state=citysta.state).filter_by(city=citysta.city).all()
    ven_list = []
    for ven in venlist:
@@ -116,28 +114,26 @@ def show_venue(venue_id):
   ven_details = Venue.query.filter(Venue.id == venue_id).all()
   
   # get the details of past show
-  past_shows = db.session.query(Show).filter(Show.venue_id == venue_id).filter(Show.start_time<datetime.now()).all()
+  past_shows = db.session.query(Show).filter(Show.venue_id == venue_id).join(Artist).filter(Show.start_time<datetime.now()).all()
   past_showlist = []
 
   for past in past_shows:
-    artist = db.session.query(Artist.name, Artist.image_link).filter(Artist.id == past.artist_id).one()
     past_showlist.append({
       "artist_id": past.artist_id,
-      "artist_name": artist.name,
-      "artist_image_link": artist.image_link,
+      "artist_name": past.artist.name,
+      "artist_image_link": past.artist.image_link,
       "start_time": past.start_time.strftime('%Y-%m-%d %H:%M:%S')
     })
 # get the details of upcoming  show
 
-  upcoming_shows = db.session.query(Show).filter(Show.venue_id == venue_id).filter(Show.start_time>datetime.now()).all()
+  upcoming_shows = db.session.query(Show).filter(Show.venue_id == venue_id).join(Artist).filter(Show.start_time>datetime.now()).all()
   upcoming_showlist = []
 
   for upcom in upcoming_shows:
-    artist = db.session.query(Artist.name, Artist.image_link).filter(Artist.id == upcom.artist_id).one()
     upcoming_showlist.append({
       "artist_id": upcom.artist_id,
-      "artist_name": artist.name,
-      "artist_image_link": artist.image_link,
+      "artist_name": upcom.artist.name,
+      "artist_image_link": upcom.artist.image_link,
       "start_time": upcom.start_time.strftime('%Y-%m-%d %H:%M:%S')
     })
 
@@ -187,44 +183,35 @@ def create_venue_submission():
   if form_v.validate():
     try:
       max_id = db.session.query(func.max(Venue.id)).scalar()
-      add_ven = Venue()
-      add_ven.id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
+      add_ven = Venue(
+        id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
       #counter was starting from 1 even though table already had 3 entries
-      add_ven.name = form_v.name.data,
-      add_ven.city = form_v.city.data,
-      add_ven.state = form_v.state.data,
-      add_ven.address = form_v.address.data,
-      add_ven.phone = form_v.phone.data,
-      genres_list=[]
-      genres_list.append(form_v.genres.data)
-      print("Form genres data:", genres_list)
-      print("Type of genres data:", type(genres_list))
-      add_ven.genres = genres_list[0]
-      print("Add venue genres :", add_ven.genres)
-      print("Type of add venue genres:", type(add_ven.genres))
-      add_ven.image_link = form_v.image_link.data,
-      add_ven.facebook_link = form_v.facebook_link.data,
-      add_ven.website = form_v.website_link.data,
-      seek_talent = request.form.get('seeking_talent')
-      if seek_talent == 'y':
-        add_ven.seeking_talent = True
-      else:
-        add_ven.seeking_talent = False
-      add_ven.seeking_description = form_v.seeking_description.data
+        name=form_v.name.data,
+        city=form_v.city.data,
+        state=form_v.state.data,
+        address=form_v.address.data,
+        phone=form_v.phone.data,
+        genres=form_v.genres.data,
+        image_link=form_v.image_link.data,
+        facebook_link=form_v.facebook_link.data,
+        website=form_v.website_link.data,
+        seeking_talent=form_v.seeking_talent.data, 
+        seeking_description=form_v.seeking_description.data
+      )
       db.session.add(add_ven)
       db.session.commit()
-    except:
+    except Exception as e:
       error = True
       db.session.rollback()
-      print(sys.exc_info())
+      print(f'Error: {e}')
+      flash('Venue ' + request.form['name'] + ' could not be listed.')
     finally:
       db.session.close()
   else:
     error = True
+    flash('Form validation failed. Please check your inputs and try again.')
 
-  if error:
-    flash('Venue ' + request.form['name'] + ' could not be listed.')
-  else:
+  if not error:
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
 
   return render_template('pages/home.html')
@@ -303,28 +290,26 @@ def show_artist(artist_id):
   artst_dets = Artist.query.filter(Artist.id == artist_id).all()
   
   # get the details of past show
-  past_shows = db.session.query(Show).filter(Show.artist_id == artist_id).filter(Show.start_time<datetime.now()).all()
+  past_shows = db.session.query(Show).filter(Show.artist_id == artist_id).join(Venue).filter(Show.start_time<datetime.now()).all()
   past_showlist = []
 
   for past in past_shows:
-    venue = db.session.query(Venue.name, Venue.image_link).filter(Venue.id == past.venue_id).one()
     past_showlist.append({
       "venue_id": past.venue_id,
-      "venue_name": venue.name,
-      "venue_image_link": venue.image_link,
+      "venue_name": past.venue.name,
+      "venue_image_link": past.venue.image_link,
       "start_time": past.start_time.strftime('%Y-%m-%d %H:%M:%S')
     })
   # get the details of upcoming  show
 
-  upcoming_shows = db.session.query(Show).filter(Show.artist_id == artist_id).filter(Show.start_time>datetime.now()).all()
+  upcoming_shows = db.session.query(Show).filter(Show.artist_id == artist_id).join(Venue).filter(Show.start_time>datetime.now()).all()
   upcoming_showlist = []
 
   for upcom in upcoming_shows:
-    venue = db.session.query(Venue.name, Venue.image_link).filter(Venue.id == upcom.venue_id).one()
     upcoming_showlist.append({
       "venue_id": upcom.venue_id,
-      "venue_name": venue.name,
-      "venue_image_link": venue.image_link,
+      "venue_name": upcom.venue.name,
+      "venue_image_link": upcom.venue.image_link,
       "start_time": upcom.start_time.strftime('%Y-%m-%d %H:%M:%S')
     })
 
@@ -356,7 +341,7 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
   form = ArtistForm()
-  artist = Artist.query.get(artist_id)
+  artist = db.session.get(Artist, artist_id)
  
   form.name.data = artist.name
   form.city.data = artist.city
@@ -378,45 +363,43 @@ def edit_artist_submission(artist_id):
   # artist record with ID <artist_id> using the new attributes
 
   error = False
-  data = db.session.query(Artist).filter(Artist.id==artist_id).one()
-  
-  try:
-    data.name = request.form.get('name'),
-    data.city = request.form.get('city'),
-    data.state = request.form.get('state'),
-    data.phone = request.form.get('phone'),
-    data.genres = ', '.join(request.form.getlist('genres'))
-    data.image_link = request.form.get('image_link'),
-    data.facebook_link = request.form.get('facebook_link'),
-    data.website = request.form.get('website_link'),
-    seek_venue = request.form.get('seeking_venue')
-    if seek_venue == 'y':
-      data.seeking_venue = True
-    else:
-      data.seeking_venue = False
-    data.seeking_description = request.form.get('seeking_description')
-    
-    db.session.add(data)
-    db.session.commit()
-  except:
-      error = True
-      db.session.rollback()
-      print(sys.exc_info())
-  finally:
-      db.session.close()
+  upd_art = db.session.get(Artist, artist_id)
+  form_a = ArtistForm(request.form)
 
-  if error:
-    flash('Artist ' + request.form['name'] + ' could not be updated.')
+  if form_a.validate():
+    try:
+      upd_art.name = form_a.name.data
+      upd_art.city = form_a.city.data
+      upd_art.state = form_a.state.data
+      upd_art.phone = form_a.phone.data
+      upd_art.genres = form_a.genres.data
+      upd_art.image_link = form_a.image_link.data
+      upd_art.facebook_link = form_a.facebook_link.data  
+      upd_art.website = form_a.website_link.data
+      upd_art.seeking_venue = form_a.seeking_venue.data
+      upd_art.seeking_description = form_a.seeking_description.data
+      
+      db.session.commit()
+    except Exception as e:
+        error = True
+        db.session.rollback()
+        print(f'Error: {e}')
+        flash('Artist ' + request.form['name'] + ' could not be updated.')
+    finally:
+        db.session.close()
   else:
-    flash('Artist ' + request.form['name'] + ' was successfully updated!')
+    error = True
+    flash('Form validation failed. Please check your inputs and try again.')
 
+  if not error:
+    flash('Artist ' + request.form['name'] + ' was successfully updated!')
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   form = VenueForm()
-  venue = Venue.query.get(venue_id)
+  venue = db.session.get(Venue, venue_id)
 
   form.name.data = venue.name
   form.address.data = venue.address
@@ -438,37 +421,36 @@ def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
   error = False
-  data = db.session.query(Venue).filter(Venue.id==venue_id).one()
-  
-  try:
-    data.name = request.form.get('name'),
-    data.address = request.form.get('address'),
-    data.city = request.form.get('city'),
-    data.state = request.form.get('state'),
-    data.phone = request.form.get('phone'),
-    data.genres = ', '.join(request.form.getlist('genres'))
-    data.image_link = request.form.get('image_link'),
-    data.facebook_link = request.form.get('facebook_link'),
-    data.website = request.form.get('website_link'),
-    seek_talent = request.form.get('seeking_talent')
-    if seek_talent == 'y':
-      data.seeking_talent = True
-    else:
-      data.seeking_talent = False
-    data.seeking_description = request.form.get('seeking_description')
-    
-    db.session.add(data)
-    db.session.commit()
-  except:
-      error = True
-      db.session.rollback()
-      print(sys.exc_info())
-  finally:
-      db.session.close()
+  upd_ven = db.session.get(Venue, venue_id)
+  form_v = VenueForm(request.form)
 
-  if error:
-    flash('Venue ' + request.form['name'] + ' could not be updated.')
+  if form_v.validate():
+    try:
+      upd_ven.name = form_v.name.data
+      upd_ven.address = form_v.address.data
+      upd_ven.city = form_v.city.data
+      upd_ven.state = form_v.state.data
+      upd_ven.phone = form_v.phone.data
+      upd_ven.genres = form_v.genres.data
+      upd_ven.image_link = form_v.image_link.data
+      upd_ven.facebook_link = form_v.facebook_link.data  
+      upd_ven.website = form_v.website_link.data
+      upd_ven.seeking_talent = form_v.seeking_talent.data
+      upd_ven.seeking_description = form_v.seeking_description.data
+      
+      db.session.commit()
+    except Exception as e:
+        error = True
+        db.session.rollback()
+        print(f'Error: {e}')
+        flash('Venue ' + request.form['name'] + ' could not be updated.')
+    finally:
+        db.session.close()
   else:
+    error = True
+    flash('Form validation failed. Please check your inputs and try again.')
+
+  if not error:
     flash('Venue ' + request.form['name'] + ' was successfully updated!')
 
   return redirect(url_for('show_venue', venue_id=venue_id))
@@ -494,37 +476,39 @@ def create_artist_submission():
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
 
   error = False
+  form_a = ArtistForm(request.form)
   
-  try:
+  if form_a.validate():
+    try:
       max_id = db.session.query(func.max(Artist.id)).scalar()
-      add_artist = Artist()
-      add_artist.id = max_id + 1,
-      add_artist.name = request.form.get('name'),
-      add_artist.city = request.form.get('city'),
-      add_artist.state = request.form.get('state'),
-      add_artist.phone = request.form.get('phone'),
-      add_artist.genres = ', '.join(request.form.getlist('genres'))
-      add_artist.image_link = request.form.get('image_link'),
-      add_artist.facebook_link = request.form.get('facebook_link'),
-      add_artist.website = request.form.get('website_link'),
-      seek_venue = request.form.get('seeking_venue')
-      if seek_venue == 'y':
-        add_artist.seeking_venue = True
-      else:
-        add_artist.seeking_venue = False
-      add_artist.seeking_description = request.form.get('seeking_description')
-      db.session.add(add_artist)
+      add_art = Artist(
+        id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
+      #counter was starting from 1 even though table already had 3 entries
+        name=form_a.name.data,
+        city=form_a.city.data,
+        state=form_a.state.data,
+        phone=form_a.phone.data,
+        genres=form_a.genres.data,
+        image_link=form_a.image_link.data,
+        facebook_link=form_a.facebook_link.data,
+        website=form_a.website_link.data,
+        seeking_venue=form_a.seeking_venue.data, 
+        seeking_description=form_a.seeking_description.data
+      )
+      db.session.add(add_art)
       db.session.commit()
-  except:
+    except Exception as e:
       error = True
       db.session.rollback()
-      print(sys.exc_info())
-  finally:
+      print(f'Error: {e}')
+      flash('Artist ' + request.form['name'] + ' could not be listed.')
+    finally:
       db.session.close()
-
-  if error:
-    flash('Artist ' + request.form['name'] + ' could not be listed.')
   else:
+    error = True
+    flash('Form validation failed. Please check your inputs and try again.')
+
+  if not error:
     flash('Artist ' + request.form['name'] + ' was successfully listed!')
 
   return render_template('pages/home.html')
@@ -569,28 +553,33 @@ def create_show_submission():
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   error = False
+  form_s = ShowForm(request.form)
   
-  try:
+  if form_s.validate():
+    try: 
       max_id = db.session.query(func.max(Show.id)).scalar()
-      add_show = Show()
-      add_show.id = max_id + 1
-      add_show.venue_id = request.form.get('venue_id')
-      add_show.artist_id = request.form.get('artist_id')
-      add_show.start_time = request.form.get('start_time')
+      add_show = Show(
+        id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
+      #counter was starting from 1 even though table already had 3 entries
+        venue_id=form_s.venue_id.data,
+        artist_id=form_s.artist_id.data,
+        start_time=form_s.start_time.data
+      )
       db.session.add(add_show)
       db.session.commit()
-  except:
+    except Exception as e:
       error = True
       db.session.rollback()
-      print(sys.exc_info())
-  finally:
+      print(f'Error: {e}')
+      flash('Show could not be listed!')
+    finally:
       db.session.close()
-
-  if error:
-    flash('Show could not be listed!')
   else:
-    flash('Show was successfully listed!')
+    error = True
+    flash('Form validation failed. Please check your inputs and try again.')
 
+  if not error:
+    flash('Show was successfully listed!')
 
   return render_template('pages/home.html')
 
