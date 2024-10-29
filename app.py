@@ -76,7 +76,6 @@ def venues():
        "name": ven.name,
        "num_upcoming_shows": upcom_shows
      })
-# preparing the data list
     
    data.append({
       "city": citysta.city,
@@ -183,34 +182,45 @@ def create_venue_submission():
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   error = False
+  form_v = VenueForm(request.form)
   
-  try:
+  if form_v.validate():
+    try:
       max_id = db.session.query(func.max(Venue.id)).scalar()
-      add_venue = Venue()
-      add_venue.id = max_id + 1,
-      add_venue.name = request.form.get('name'),
-      add_venue.city = request.form.get('city'),
-      add_venue.state = request.form.get('state'),
-      add_venue.address = request.form.get('address'),
-      add_venue.phone = request.form.get('phone'),
-      add_venue.genres = ', '.join(request.form.getlist('genres'))
-      add_venue.image_link = request.form.get('image_link'),
-      add_venue.facebook_link = request.form.get('facebook_link'),
-      add_venue.website = request.form.get('website_link'),
+      add_ven = Venue()
+      add_ven.id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
+      #counter was starting from 1 even though table already had 3 entries
+      add_ven.name = form_v.name.data,
+      add_ven.city = form_v.city.data,
+      add_ven.state = form_v.state.data,
+      add_ven.address = form_v.address.data,
+      add_ven.phone = form_v.phone.data,
+      genres_list=[]
+      genres_list.append(form_v.genres.data)
+      print("Form genres data:", genres_list)
+      print("Type of genres data:", type(genres_list))
+      add_ven.genres = genres_list[0]
+      print("Add venue genres :", add_ven.genres)
+      print("Type of add venue genres:", type(add_ven.genres))
+      add_ven.image_link = form_v.image_link.data,
+      add_ven.facebook_link = form_v.facebook_link.data,
+      add_ven.website = form_v.website_link.data,
       seek_talent = request.form.get('seeking_talent')
       if seek_talent == 'y':
-        add_venue.seeking_talent = True
+        add_ven.seeking_talent = True
       else:
-        add_venue.seeking_talent = False
-      add_venue.seeking_description = request.form.get('seeking_description')
-      db.session.add(add_venue)
+        add_ven.seeking_talent = False
+      add_ven.seeking_description = form_v.seeking_description.data
+      db.session.add(add_ven)
       db.session.commit()
-  except:
+    except:
       error = True
       db.session.rollback()
       print(sys.exc_info())
-  finally:
+    finally:
       db.session.close()
+  else:
+    error = True
 
   if error:
     flash('Venue ' + request.form['name'] + ' could not be listed.')
