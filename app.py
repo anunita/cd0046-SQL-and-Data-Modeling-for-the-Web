@@ -4,7 +4,15 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import (
+  Flask, 
+  render_template, 
+  request, 
+  Response, 
+  flash, 
+  redirect, 
+  url_for
+)
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
@@ -182,10 +190,7 @@ def create_venue_submission():
   
   if form_v.validate():
     try:
-      max_id = db.session.query(func.max(Venue.id)).scalar()
       add_ven = Venue(
-        id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
-      #counter was starting from 1 even though table already had 3 entries
         name=form_v.name.data,
         city=form_v.city.data,
         state=form_v.state.data,
@@ -480,10 +485,7 @@ def create_artist_submission():
   
   if form_a.validate():
     try:
-      max_id = db.session.query(func.max(Artist.id)).scalar()
       add_art = Artist(
-        id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
-      #counter was starting from 1 even though table already had 3 entries
         name=form_a.name.data,
         city=form_a.city.data,
         state=form_a.state.data,
@@ -557,10 +559,7 @@ def create_show_submission():
   
   if form_s.validate():
     try: 
-      max_id = db.session.query(func.max(Show.id)).scalar()
       add_show = Show(
-        id = max_id + 1, #added explicit addition of 1 from max value as local set up was throwing error and 
-      #counter was starting from 1 even though table already had 3 entries
         venue_id=form_s.venue_id.data,
         artist_id=form_s.artist_id.data,
         start_time=form_s.start_time.data
