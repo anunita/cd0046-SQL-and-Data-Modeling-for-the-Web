@@ -186,7 +186,7 @@ def create_venue_submission():
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   error = False
-  form_v = VenueForm(request.form)
+  form_v = VenueForm(request.form, meta={'csrf': False})
   
   if form_v.validate():
     try:
@@ -214,7 +214,9 @@ def create_venue_submission():
       db.session.close()
   else:
     error = True
-    flash('Form validation failed. Please check your inputs and try again.')
+    for error in form_v.errors:
+      flash(error)
+      flash('Form validation failed. Please check your inputs and try again.')
 
   if not error:
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
@@ -369,7 +371,7 @@ def edit_artist_submission(artist_id):
 
   error = False
   upd_art = db.session.get(Artist, artist_id)
-  form_a = ArtistForm(request.form)
+  form_a = ArtistForm(request.form, meta={'csrf': False})
 
   if form_a.validate():
     try:
@@ -394,7 +396,9 @@ def edit_artist_submission(artist_id):
         db.session.close()
   else:
     error = True
-    flash('Form validation failed. Please check your inputs and try again.')
+    for error in form_a.errors:
+      flash(error)
+      flash('Form validation failed. Please check your inputs and try again.')
 
   if not error:
     flash('Artist ' + request.form['name'] + ' was successfully updated!')
@@ -427,7 +431,7 @@ def edit_venue_submission(venue_id):
   # venue record with ID <venue_id> using the new attributes
   error = False
   upd_ven = db.session.get(Venue, venue_id)
-  form_v = VenueForm(request.form)
+  form_v = VenueForm(request.form, meta={'csrf': False})
 
   if form_v.validate():
     try:
@@ -453,7 +457,9 @@ def edit_venue_submission(venue_id):
         db.session.close()
   else:
     error = True
-    flash('Form validation failed. Please check your inputs and try again.')
+    for error in form_v.errors:
+      flash(error)
+      flash('Form validation failed. Please check your inputs and try again.')
 
   if not error:
     flash('Venue ' + request.form['name'] + ' was successfully updated!')
@@ -481,7 +487,7 @@ def create_artist_submission():
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
 
   error = False
-  form_a = ArtistForm(request.form)
+  form_a = ArtistForm(request.form, meta={'csrf': False})
   
   if form_a.validate():
     try:
@@ -508,7 +514,9 @@ def create_artist_submission():
       db.session.close()
   else:
     error = True
-    flash('Form validation failed. Please check your inputs and try again.')
+    for error in form_a.errors:
+      flash(error)
+      flash('Form validation failed. Please check your inputs and try again.')
 
   if not error:
     flash('Artist ' + request.form['name'] + ' was successfully listed!')
